@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'freelance_app/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-profile">
+  <div class="profile-wrap">
+
+    <!-- Header блока профиля (НЕ сайт-хедер) -->
+    <header class="profile-header">
+      {% if profile.avatar %}
+        <img class="profile-avatar" src="{{ profile.avatar.url }}" alt="">
+      {% else %}
+        <img class="profile-avatar" src="{% static 'freelance_app/img/avatar-placeholder.svg' %}" alt="">
+      {% endif %}
+
+      <div class="profile-title">
+        <h1>{{ profile.user.get_full_name|default:profile.user.username }}</h1>
+        {% if stats.reviews_cnt %}
+          <div class="chips">
+            <span class="chip">Оценка: {{ stats.reviews_avg|floatformat:1 }} ({{ stats.reviews_cnt }})</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="profile-actions">
+        <div class="settings-menu">
+          <button class="icon-btn" aria-label="Настройки">
+            <img src="{% static 'freelance_app/img/settings.png' %}" alt="Настройки">
+          </button>
+          <div class="dropdown">
+            <a href="#" >Уведомления</a>
+            <a href="#" >История платежей</a>
+            <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="profile-body">
+      <!-- ЛЕВАЯ КОЛОНКА: контакты, город, навыки, отзывы -->
+      <aside class="card">
+        <div class="kv">
+          {% if profile.phone %}
+            <div class="row"><div class="key">Телефон</div><div class="val">{{ profile.phone }}</div></div>
+          {% endif %}
+
+          {% if user_obj.email %}
+            <div class="row"><div class="key">Email</div><div class="val"><a href="mailto:{{ user_obj.email }}">{{ user_obj.email }}</a></div></div>
+          {% endif %}
+
+          {% if profile.location %}
+            <div class="row"><div class="key">Город</div><div class="val">{{ profile.location }}</div></div>
+          {% endif %}
+          {% if profile.qr_code %}
+            <div class="row">
+              <div class="key">Qr код</div>
+              <div class="val">
+                <a href="{{ profile.qr_code.url }}" target="_blank">
+                  <img src="{{ profile.qr_code.url }}" alt="QR-код" class="qr-thumb">
+                </a>
+              </div>
+            </div>
+          {% else %}
+            <div class="row">
+              <div class="key">Платёжная информация</div>
+              <div class="val muted">Пока не добавлено</div>
+            </div>
+          {% endif %}
+          <div class="row">
+            <div class="key">Навыки</div>
+            <div class="val pills">
+              {% if profile.skills %}
+                <span class="pill">{{ profile.skills }}</span>
+              {% else %}
+                <span class="pill">Пока не указаны</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <h3 style="font-size:16px; margin:8px 0 6px">Отзывы</h3>
+          <ul class="reviews">
+            {% for r in reviews_page %}
+              <li>
+                <strong>{{ r.author.get_full_name|default:r.author.username }}</strong>:
+                {{ r.rating }}/5 — {{ r.comment|default:"Без комментария" }}
+              </li>
+            {% empty %}
+              <li>Отзывов пока нет</li>
+            {% endfor %}
+          </ul>
+
+          {% if reviews_page.paginator.num_pages > 1 %}
+            <div style="margin-top:8px; display:flex; gap:8px">
+              {% if reviews_page.has_previous %}
+                <a class="pill" href="?rvpage={{ reviews_page.previous_page_number }}">← Назад</a>
+              {% endif %}
+              <span class="pill">Стр. {{ reviews_page.number }} / {{ reviews_page.paginator.num_pages }}</span>
+              {% if reviews_page.has_next %}
+                <a class="pill" href="?rvpage={{ reviews_page.next_page_number }}">Вперёд →</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </aside>
+
+      <!-- ПРАВАЯ КОЛОНКА: О себе + счётчики -->
+      <main class="section">
+        <h2>О себе</h2>
+        {% if profile.bio %}
+          <p style="white-space:pre-wrap">{{ profile.bio }}</p>
+        {% else %}
+          <p class="muted">Пока без описания.</p>
+        {% endif %}
+
+        <div class="pills" style="margin-top:12px">
+          <span class="pill">Заявки: {{ stats.my_applications }}</span>
+          <span class="pill">Отклики на мои задачи: {{ stats.task_responses }}</span>
+          <span class="pill">Непрочитанных: {{ stats.unread }}</span>
+        </div>
+
+        <!-- позже блоки Исполнитель / Заказчик -->
+        <section class="section" style="margin-top: 24px">
+          <div class="tabs-header">
+            <button class="tab active" data-tab="executor">Исполнитель</button>
+            <button class="tab" data-tab="customer">Заказчик</button>
+          </div>
+          <div class="tabs-line"></div>
+
+          <!-- пока таблицы скрыты -->
+          <div id="tab-executor" class="tabpane" style="display:none">
+            <h3>Заявки</h3>
+            <p class="muted">Здесь пока пусто.</p>
+          </div>
+
+          <div id="tab-customer" class="tabpane" style="display:none">
+            <h3>Отклики</h3>
+            <p class="muted">Здесь пока пусто.</p>
+          </div>
+        </section>
+      </main>
+      <script>
+        document.querySelectorAll(".tab").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            btn.classList.add("active");
+
+            // скрываем все панели
+            document.querySelectorAll(".tabpane").forEach(p => p.style.display = "none");
+
+            // показываем нужную
+            const id = "tab-" + btn.dataset.tab;
+            document.getElementById(id).style.display = "block";
+          });
+        });
+        //Чтобы сразу исполнителя видеть
+        document.getElementById("tab-executor").style.display = "block";
+      </script>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{# Скрываем футер именно на странице профиля #}
+{% block footer %}{% endblock %}

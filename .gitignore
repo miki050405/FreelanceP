@@ -9,7 +9,9 @@ __pycache__/
 db.sqlite3
 /staticfiles/
 media/
-
+# Static and media 
+static/img/
+static/css/*.map
 # Virtual environment
 venv/
 .env/
