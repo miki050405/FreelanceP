@@ -6,17 +6,21 @@ from django.db.models import Avg, Count
 from django.core.paginator import Paginator
 from .forms import UserForm, UserProfileForm
 from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from .forms import UserRegisterForm
 
 
 def home_view(request):
     return render(request, "home.html")
 
 
+@login_required
 def profile_view(request):
     # TODO: потом заменить на request.user
-    user = get_object_or_404(User, id=1)
+    user = request.user
 
-    profile = get_object_or_404(UserProfile.objects.select_related("user"), user=user)
+    profile, _ = UserProfile.objects.get_or_create(user=user)
 
     # Счётчики и ОЦЕНКА (средняя по отзывам)
     reviews_agg = Review.objects.filter(receiver=user).aggregate(
@@ -59,17 +63,15 @@ def profile_view(request):
 
 
 def edit_profile(request):
-    user = get_object_or_404(User, id=1)
+    user = request.user
     # для редактирования лучше гарантировать наличие профиля
-    profile, _created = UserProfile.objects.get_or_create(user=user)
-
+    profile, _ = UserProfile.objects.get_or_create(user=user)
     if request.method == "POST":
         user_form = UserForm(request.POST, instance=user)
         profile_form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.success(request, "Профиль обновлён ✅")
             return redirect("profile")
         messages.error(request, "Проверь поля формы.")
     else:
@@ -84,3 +86,49 @@ def edit_profile(request):
             "profile_form": profile_form,
         },
     )
+
+
+def register_view(request):
+    if request.method == "POST":
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.username = user.username.lower()
+            user.save()
+
+            # создаём профиль
+            UserProfile.objects.get_or_create(user=user)
+
+            login(request, user)
+            return redirect("profile")
+
+    else:
+        form = UserRegisterForm()
+
+    return render(request, "register.html", {"form": form})
+
+
+from django.contrib.auth import authenticate, login, logout
+
+
+def login_view(request):
+    show_error = False
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect("profile")
+        else:
+            show_error = True
+
+    return render(request, "login.html", {"show_error": show_error})
+
+
+def logout_view(request):
+    logout(request)
+    return redirect("login")

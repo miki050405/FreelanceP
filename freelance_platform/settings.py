@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "freelance_app",
 ]
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "profile"  # куда попадет после логина
+LOGOUT_REDIRECT_URL = "login"  # куда попадет после логаута
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

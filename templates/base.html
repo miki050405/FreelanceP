@@ -27,13 +27,30 @@
         <div class="search">
           <input type="text" placeholder="Поиск…">
         </div>
+        {% if user.is_authenticated %}
         <a class="avatar-btn" href="{% url 'profile' %}" title="Личный кабинет">
           <img src="{% static 'freelance_app/img/icon-user.png' %}" alt="Профиль">
         </a>
+        <a class="btn btn-link" href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+          <a class="btn btn-outline" href="{% url 'login' %}">Войти</a>
+          <a class="btn btn-primary" href="{% url 'register' %}">Регистрация</a>
+       {% endif %}
       </div>
+
     </div>
   </header>
-
+{% block flash %}
+  {% if messages %}
+    <div class="site-messages">
+      <ul>
+        {% for message in messages %}
+          <li class="msg {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endblock %}
   <!-- Main -->
   <main class="site-main">
     {% block content %}{% endblock %}
@@ -72,3 +89,5 @@
   {% endblock %}
 </body>
 </html>
+
+
