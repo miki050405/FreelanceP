@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}ФриЛанПла — Главная{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-illustration">
+      <img src="{% static 'freelance_app/img/hero-illustration.png' %}" alt="Иллюстрация">
+    </div>
+    <div class="hero-text">
+      <h1>Ищете себе новые задачи?</h1>
+      <p>Включите уведомления о новых задачах в интересующих вас категориях</p>
+      <a class="btn btn-primary" href="#">Настроить уведомления</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

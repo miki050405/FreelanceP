@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Удалить задачу{% endblock %}
+{% block content %}
+<h2>Удалить задачу "{{ task.title }}"?</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Да, удалить</button>
+    <a href="{% url 'profile' %}">Отмена</a>
+</form>
+{% endblock %}

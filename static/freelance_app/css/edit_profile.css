@@ -1,0 +1,58 @@
+.edit-wrap{max-width:760px;margin:36px auto;padding:0 16px}
+.edit-card{background:#f6f2fa;border:1px solid #e6d9fb;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(120,84,170,.22)}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.header h2{color:#4b1f78;margin:0}
+.back{color:#5b3c88;text-decoration:none;background:#efe6fb;border:1px solid #dfcdf8;padding:8px 12px;border-radius:10px}
+.form .field{margin:12px 0}
+.form label{display:flex;justify-content:space-between;align-items:center;color:#5b3c88;font-weight:600;margin-bottom:6px}
+.form .icon{font-size:14px}
+.form input[type="text"], .form input[type="email"], .form textarea, .form input[type="file"]{
+  width:100%;border:1px solid #d9c7f5;border-radius:12px;padding:10px 12px;background:#fff;outline:none;transition:border .15s, box-shadow .15s
+}
+.form textarea{resize:vertical}
+.form input:focus, .form textarea:focus{border-color:#b899ee;box-shadow:0 0 0 3px rgba(184,153,238,.25)}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.btn{padding:10px 16px;border-radius:12px;border:1px solid transparent;text-decoration:none;cursor:pointer;font-weight:600}
+.btn.primary{background:#8f6ad8;color:#fff;border-color:#8f6ad8;box-shadow:0 6px 16px rgba(143,106,216,.35)}
+.btn.ghost{background:#efe6fb;color:#5b3c88;border-color:#dfcdf8}
+.file-input {
+  display: block;
+  background: #ffffff;
+  border: 1px solid #d9c7f5;
+  border-radius: 12px;
+  padding: 8px 12px;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.file-input:hover {
+  border-color: #b899ee;
+  background: #f8f4ff;
+}
+
+.preview {
+  display: block;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e6d9fb;
+  margin-bottom: 10px;
+}
+
+.preview--qr {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.btn.primary {
+  background: #00bfa5; /* изумрудный */
+  color: #fff;
+  border: none;
+}
+.btn.primary:hover {
+  background: #00a38e;
+}
