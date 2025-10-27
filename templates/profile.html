@@ -140,10 +140,51 @@
           </div>
 
           <div id="tab-customer" class="tabpane" style="display:none">
+            <!-- Отклики -->
             <h3>Отклики</h3>
-            <p class="muted">Здесь пока пусто.</p>
+            {% if my_responses %}
+              <ul class="responses-list">
+                {% for r in my_responses %}
+                  <li>
+                    <strong>{{ r.task.title }}</strong> — {{ r.status }}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">Здесь пока пусто.</p>
+            {% endif %}
+
+            <!-- Мои задачи -->
+            <h3 style="margin-top:16px;">Мои задачи</h3>
+            {% if my_tasks %}
+              <ul class="tasks-list">
+                {% for task in my_tasks %}
+                  <li class="task-item">
+                    <strong>{{ task.title }}</strong> — {{ task.status }} — {{ task.price }}₽
+                    <div class="task-actions">
+                      <a href="{% url 'task_edit' task.pk %}" class="btn-small">Редактировать</a>
+                      <a href="{% url 'task_delete' task.pk %}" class="btn-small btn-danger">Удалить</a>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">Нет задач</p>
+            {% endif %}
+            <a href="{% url 'task_create' %}" class="btn btn-primary" style="margin-top:10px;">Создать новую задачу</a>
+
+            <style>
+              .tasks-list, .responses-list { list-style: none; padding: 0; margin: 0; }
+              .task-item { padding: 8px 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+              .task-actions a { margin-left: 6px; text-decoration: none; padding: 4px 8px; border-radius: 5px; font-size: 13px; }
+              .btn-small { background: #2196f3; color: white; }
+              .btn-small.btn-danger { background: #e53935; }
+              .btn-primary { background: #4caf50; color: white; padding: 8px 14px; text-decoration: none; border-radius: 6px; display: inline-block; }
+              .muted { color: #888; }
+            </style>
           </div>
-        </section>
+
+
       </main>
       <script>
         document.querySelectorAll(".tab").forEach(btn => {
