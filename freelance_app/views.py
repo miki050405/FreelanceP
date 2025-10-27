@@ -167,3 +167,8 @@ def task_delete(request, pk):
         task.delete()
         return redirect("profile")
     return render(request, "task_confirm_delete.html", {"task": task})
+
+@login_required
+def tasks_list(request):
+    tasks = Task.objects.all().order_by("-created_at")
+    return render(request, "tasks_list.html", {"tasks": tasks})

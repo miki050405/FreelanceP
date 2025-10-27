@@ -160,7 +160,7 @@
               <ul class="tasks-list">
                 {% for task in my_tasks %}
                   <li class="task-item">
-                    <strong>{{ task.title }}</strong> — {{ task.status }} — {{ task.price }}₽
+                    <strong>{{ task.title }}</strong> — {{ task.status }} — {{ task.price }} с
                     <div class="task-actions">
                       <a href="{% url 'task_edit' task.pk %}" class="btn-small">Редактировать</a>
                       <a href="{% url 'task_delete' task.pk %}" class="btn-small btn-danger">Удалить</a>
