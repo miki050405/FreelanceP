@@ -9,8 +9,13 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm
-from .models import Task
+from .models import Task, Response
 from .forms import TaskForm
+from django.urls import reverse
+from django.db.models import Q
+from django.views.decorators.http import require_POST
+from django.db import transaction
+
 
 def home_view(request):
     return render(request, "home.html")
@@ -28,7 +33,29 @@ def profile_view(request):
         avg=Avg("rating"),
         cnt=Count("id"),
     )
-
+    # все мои заявки
+    my_responses = (
+        Response.objects.filter(executor=user)
+        .select_related("task", "task__customer", "task__category")
+        .order_by("-created_at")
+    )
+    my_responses_pending = (
+        Response.objects.filter(executor=user)
+        .exclude(status="Принята")
+        .select_related("task", "task__customer", "task__category")
+        .order_by("-created_at")
+    )
+    my_assignments = (
+        Response.objects.filter(executor=user, status="Принята")
+        .select_related("task", "task__customer", "task__category")
+        .exclude(task__status="Завершена")
+        .order_by("-created_at")
+    )
+    responses_to_my_tasks = (
+        Response.objects.filter(task__customer=user)
+        .select_related("task", "task__category", "executor")
+        .order_by("-created_at")
+    )
     stats = {
         "active_tasks": Task.objects.filter(customer=user, status="В работе").count(),
         # заявки как ИСПОЛНИТЕЛЬ
@@ -52,15 +79,129 @@ def profile_view(request):
         "user_obj": user,
         "stats": stats,
         "reviews_page": reviews_page,
-        # пригодится дальше для вкладок Исполнитель/Заказчик
         "my_tasks": Task.objects.filter(customer=user)
         .select_related("category", "executor")
         .order_by("-created_at"),
-        "my_responses": Response.objects.filter(executor=user)
-        .select_related("task", "task__customer", "task__category")
-        .order_by("-created_at"),
+        "my_responses": my_responses,
+        "my_responses_pending": my_responses_pending,
+        "my_assignments": my_assignments,
+        "responses_to_my_tasks": responses_to_my_tasks,
+        "response_status_choices": Response.STATUS_CHOICES,
     }
     return render(request, "profile.html", context)
+
+
+@login_required
+def profile_public_view(request, user_id):
+    target = get_object_or_404(User, pk=user_id)
+    profile, _ = UserProfile.objects.get_or_create(user=target)
+
+    reviews_agg = Review.objects.filter(receiver=target).aggregate(
+        avg=Avg("rating"), cnt=Count("id")
+    )
+
+    # то, что должен видеть гость на чужом профиле:
+    my_assignments = (
+        Response.objects.filter(executor=target, status="Принята")
+        .select_related("task", "task__customer", "task__category")
+        .exclude(task__status="Завершена")
+        .order_by("-created_at")
+    )
+
+    responses_to_my_tasks = (
+        Response.objects.filter(task__customer=target)
+        .select_related("task", "task__category", "executor")
+        .order_by("-created_at")
+    )
+
+    my_tasks = (
+        Task.objects.filter(customer=target)
+        .select_related("category", "executor")
+        .order_by("-created_at")
+    )
+
+    reviews_qs = (
+        Review.objects.filter(receiver=target)
+        .select_related("author", "task")
+        .order_by("-created_at")
+    )
+    reviews_page = Paginator(reviews_qs, 5).get_page(request.GET.get("rvpage"))
+
+    context = {
+        "profile": profile,
+        "user_obj": target,  # важно для шапки профиля
+        "is_public": True,  # флаг для шаблона
+        "stats": {
+            "reviews_avg": reviews_agg["avg"] or 0,
+            "reviews_cnt": reviews_agg["cnt"] or 0,
+            "my_applications": Response.objects.filter(executor=target).count(),
+            "task_responses": responses_to_my_tasks.count(),
+            "unread": 0,
+        },
+        # данные для вкладок
+        "my_assignments": my_assignments,
+        "responses_to_my_tasks": responses_to_my_tasks,
+        "my_tasks": my_tasks,
+        # заявки скрываем — в шаблоне просто не выводим этот блок при is_public
+        "my_responses_pending": None,
+        "response_status_choices": Response.STATUS_CHOICES,
+    }
+    return render(request, "profile.html", context)
+
+
+@require_POST
+@login_required
+def response_set_status(request, pk):
+    resp = get_object_or_404(
+        Response.objects.select_related("task", "task__customer"), pk=pk
+    )
+
+    if resp.task.customer_id != request.user.id:
+        messages.error(request, "Нет прав изменять статус этого отклика.")
+        return redirect(request.POST.get("next") or "profile")
+
+    new_status = request.POST.get("status")
+    valid = dict(Response.STATUS_CHOICES).keys()
+    if new_status not in valid:
+        messages.error(request, "Некорректный статус.")
+        return redirect(request.POST.get("next") or "profile")
+
+    with transaction.atomic():
+        if new_status == "Принята":
+            # 1) сам отклик
+            resp.status = "Принята"
+            resp.save(update_fields=["status"])
+
+            # 2) задача — назначаем исполнителя и переводим "В работе"
+            task = resp.task
+            task.executor = resp.executor
+            task.status = "В работе"
+            task.save(update_fields=["executor", "status"])
+
+            # 3) остальные отклики на эту задачу отклоняем (чтобы не было двух принятых)
+            Response.objects.filter(task=task).exclude(pk=resp.pk).update(
+                status="Отклонена"
+            )
+
+            messages.success(request, "Отклик принят. Задача переведена в «В работе».")
+        else:
+            # Любой другой статус (Рассматривается / Отклонена)
+            resp.status = new_status
+            resp.save(update_fields=["status"])
+            messages.success(request, "Статус отклика обновлён.")
+    return redirect(request.POST.get("next") or "profile")
+
+
+@require_POST
+@login_required
+def response_cancel(request, pk):
+    """Исполнитель отменяет свой отклик."""
+    resp = get_object_or_404(Response, pk=pk, executor=request.user)
+
+    # удаляем отклик
+    resp.delete()
+    messages.success(request, "Ваш отклик успешно отменён.")
+    return redirect("profile")
 
 
 def edit_profile(request):
@@ -148,6 +289,7 @@ def task_create(request):
         form = TaskForm()
     return render(request, "task_form.html", {"form": form})
 
+
 @login_required
 def task_edit(request, pk):
     task = get_object_or_404(Task, pk=pk, customer=request.user)
@@ -160,6 +302,7 @@ def task_edit(request, pk):
         form = TaskForm(instance=task)
     return render(request, "task_form.html", {"form": form})
 
+
 @login_required
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk, customer=request.user)
@@ -168,7 +311,39 @@ def task_delete(request, pk):
         return redirect("profile")
     return render(request, "task_confirm_delete.html", {"task": task})
 
-@login_required
+
+# @login_required
 def tasks_list(request):
     tasks = Task.objects.all().order_by("-created_at")
     return render(request, "tasks_list.html", {"tasks": tasks})
+
+
+def respond_to_task(request, task_id):
+    task = get_object_or_404(Task, pk=task_id, is_active=True)
+
+    if not request.user.is_authenticated:
+        messages.warning(
+            request, "Чтобы откликнуться, нужно зарегистрироваться или войти."
+        )
+        login_url = reverse("login")
+        return redirect(f"{login_url}?next={request.get_full_path()}")
+
+    if task.customer_id == request.user.id:
+        messages.error(request, "Ты очень умный, раз хочешь выполнить свою же задачу")
+        return redirect("tasks_list")
+
+    if task.status != "Открыта":
+        messages.info(request, "Отклик доступен только для открытых задач.")
+        return redirect("tasks_list")
+
+    obj, created = Response.objects.get_or_create(
+        task=task,
+        executor=request.user,
+        defaults={"status": "Рассматривается"},
+    )
+    if created:
+        messages.success(request, "Ваша заявка отправлена!")
+    else:
+        messages.info(request, "Вы уже откликались на эту задачу.")
+
+    return redirect("tasks_list")

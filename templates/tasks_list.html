@@ -8,23 +8,26 @@
 
 <div class="tasks-container">
     {% for task in tasks %}
-        <div class="task-card">
-            <h3>{{ task.title }}</h3>
-            <p>{{ task.description|linebreaks }}</p>
-            <div class="task-info">
-                {% if task.status == "Открыта" %}
-                    <span class="status status-open">{{ task.status }}</span>
-                {% elif task.status == "В работе" %}
-                    <span class="status status-inprogress">{{ task.status }}</span>
-                {% elif task.status == "Завершена" %}
-                    <span class="status status-done">{{ task.status }}</span>
-                {% endif %}
-                <span class="price">{{ task.price }} сом</span>
-                {% if task.category %}
-                    <span class="category">{{ task.category.name }}</span>
-                {% endif %}
-            </div>
-        </div>
+        <form method="post" action="{% url 'respond_to_task' task.id %}">
+            {% csrf_token %}
+            <button type="submit" class="task-card as-button">
+                <h3>{{ task.title }}</h3>
+                <p>{{ task.description|linebreaks }}</p>
+                <div class="task-info">
+                    {% if task.status == "Открыта" %}
+                        <span class="status status-open">{{ task.status }}</span>
+                    {% elif task.status == "В работе" %}
+                        <span class="status status-inprogress">{{ task.status }}</span>
+                    {% elif task.status == "Завершена" %}
+                        <span class="status status-done">{{ task.status }}</span>
+                    {% endif %}
+                    <span class="price">{{ task.price }} сом</span>
+                    {% if task.category %}
+                        <span class="category">{{ task.category.name }}</span>
+                    {% endif %}
+                </div>
+            </button>
+        </form>
     {% empty %}
         <p>Задач пока нет.</p>
     {% endfor %}
@@ -37,8 +40,12 @@
     gap: 20px;
 }
 
-.task-card {
+/* Кнопка, которая выглядит как твоя карточка */
+.task-card.as-button {
+    width: 100%;
+    text-align: left;
     background: #fff;
+    border: none;
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -46,9 +53,10 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    cursor: pointer;
+    color: inherit;
 }
-
-.task-card:hover {
+.task-card.as-button:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
@@ -58,58 +66,27 @@
     font-size: 1.2em;
     color: #333;
 }
-
 .task-card p {
     flex-grow: 1;
     color: #555;
     margin: 0 0 12px 0;
 }
-
 .task-info {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
     font-size: 0.9em;
 }
-
 .task-info span {
     padding: 4px 8px;
     border-radius: 12px;
     margin-bottom: 4px;
     color: #fff;
 }
-
-.status-open {
-    background: linear-gradient(135deg, #2196f3, #42a5f5);
-}
-.status-inprogress {
-    background: linear-gradient(135deg, #ff9800, #ffb74d);
-}
-.status-done {
-    background: linear-gradient(135deg, #4caf50, #66bb6a);
-}
-
-.price {
-    background-color: #4caf50;
-}
-
-.category {
-    background-color: #ff9800;
-}
+.status-open { background: linear-gradient(135deg, #2196f3, #42a5f5); }
+.status-inprogress { background: linear-gradient(135deg, #ff9800, #ffb74d); }
+.status-done { background: linear-gradient(135deg, #4caf50, #66bb6a); }
+.price { background-color: #4caf50; }
+.category { background-color: #ff9800; }
 </style>
-
-<script>
-    // Hover-эффект карточек
-    document.querySelectorAll('.task-card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-4px)';
-            card.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(0)';
-            card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
-        });
-    });
-</script>
-
 {% endblock %}

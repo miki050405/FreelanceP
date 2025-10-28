@@ -5,7 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'freelance_app/css/profile.css' %}">
 {% endblock %}
-{% block flash %}{% endblock %}
+
 {% block content %}
 <div class="page-profile">
   <div class="profile-wrap">
@@ -28,6 +28,7 @@
       </div>
 
       <div class="profile-actions">
+        {% if not is_public %}
         <div class="settings-menu">
           <button class="icon-btn" aria-label="Настройки">
             <img src="{% static 'freelance_app/img/settings.png' %}" alt="Настройки">
@@ -38,6 +39,7 @@
             <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
           </div>
         </div>
+        {% endif %}
       </div>
     </header>
 
@@ -133,26 +135,153 @@
           </div>
           <div class="tabs-line"></div>
 
-          <!-- пока таблицы скрыты -->
           <div id="tab-executor" class="tabpane" style="display:none">
-            <h3>Заявки</h3>
-            <p class="muted">Здесь пока пусто.</p>
+            {% if not is_public %}
+            <h3 class="section-title" onclick="toggleTable('applications-table', this)">
+              <span>Заявки</span>
+              <span class="arrow">▼</span>
+            </h3>
+            
+            <div id="applications-table" class="table-wrap" style="display:none;">
+
+              {% if my_responses_pending %}
+                  <table class="table-applications">
+                    <thead>
+                      <tr>
+                        <th>Название</th>
+                        <th>Категория</th>
+                        <th>Заказчик</th>
+                        <th>Дата отклика</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for r in my_responses_pending %}
+                      <tr>
+                        <td>{{ r.task.title }}</td>
+                        <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                        <td>{{ r.task.customer.username }}</td>
+                        <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="status {{ r.status|lower }}">{{ r.status }}</td>
+                        <td>
+                          <form method="post" action="{% url 'response_cancel' r.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-small btn-danger"
+                              onclick="return confirm('Отменить отклик?');">Отменить</button>
+                          </form>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+              {% else %}
+                <p class="muted">Здесь пока пусто.</p>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <h3 class="section-title" onclick="toggleTable('assignments-table', this)">
+            <span>Текущие задачи</span>
+            <span class="arrow">▼</span>
+          </h3>
+
+          <div id="assignments-table" class="table-wrap" style="display:none;">
+            {% if my_assignments %}
+              <table class="table-applications">
+                <colgroup>
+                  <col style="width:40%">
+                  <col style="width:25%">
+                  <col style="width:20%">
+                  <col style="width:15%">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Название</th>
+                    <th>Категория</th>
+                    <th>Заказчик</th>
+                    <th>Дедлайн</th>
+                    <th>Статус задачи</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in my_assignments %}
+                  <tr>
+                    <td>{{ r.task.title }}</td>
+                    <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                    <td>{{ r.task.customer.username }}</td>
+                    <td>{% if r.task.deadline %}{{ r.task.deadline|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+                    <td class="tstatus {{ r.task.status|slugify }}">{{ r.task.status }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p class="muted">Пока нет принятых задач.</p>
+            {% endif %}
+          </div>
           </div>
 
           <div id="tab-customer" class="tabpane" style="display:none">
             <!-- Отклики -->
-            <h3>Отклики</h3>
-            {% if my_responses %}
-              <ul class="responses-list">
-                {% for r in my_responses %}
-                  <li>
-                    <strong>{{ r.task.title }}</strong> — {{ r.status }}
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <p class="muted">Здесь пока пусто.</p>
-            {% endif %}
+                <h3 class="section-title" onclick="toggleTable('customer-responses', this)">
+                  <span>Отклики</span>
+                  <span class="arrow">▼</span>
+                </h3>
+
+                <div id="customer-responses" class="table-wrap" style="display:none;">
+                  {% if responses_to_my_tasks %}
+                    <table class="table-applications">
+                      <colgroup>
+                        <col style="width:30%">
+                        <col style="width:20%">
+                        <col style="width:20%">
+                        <col style="width:15%">
+                        <col style="width:15%">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Название</th>
+                          <th>Категория</th>
+                          <th>Исполнитель</th>
+                          <th>Дата отклика</th>
+                          <th>Статус</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for r in responses_to_my_tasks %}
+                          <tr>
+                            <td>{{ r.task.title }}</td>
+                            <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                            <td>
+                              <a href="{% url 'profile_public' r.executor.id %}" class="profile-link">
+                                {{ r.executor.get_full_name|default:r.executor.username }}
+                              </a>
+                            </td>
+                            <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                              {% if not is_public %}
+                                <form method="post" action="{% url 'response_set_status' r.id %}">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="next" value="{% url 'profile' %}?tab=customer">
+                                  <select name="status" class="status-select" onchange="this.form.submit()">
+                                    {% for val,label in response_status_choices %}
+                                      <option value="{{ val }}" {% if r.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                  </select>
+                                </form>
+                              {% else %}
+                                <span class="status {{ r.status|lower }}">{{ r.status }}</span>
+                              {% endif %}
+                            </td>
+
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  {% else %}
+                    <p class="muted">Откликов на ваши задачи пока нет.</p>
+                  {% endif %}
+                </div>
 
             <!-- Мои задачи -->
             <h3 style="margin-top:16px;">Мои задачи</h3>
@@ -162,8 +291,10 @@
                   <li class="task-item">
                     <strong>{{ task.title }}</strong> — {{ task.status }} — {{ task.price }} с
                     <div class="task-actions">
+                      {% if not is_public %}
                       <a href="{% url 'task_edit' task.pk %}" class="btn-small">Редактировать</a>
                       <a href="{% url 'task_delete' task.pk %}" class="btn-small btn-danger">Удалить</a>
+                      {% endif %}
                     </div>
                   </li>
                 {% endfor %}
@@ -171,8 +302,9 @@
             {% else %}
               <p class="muted">Нет задач</p>
             {% endif %}
-            <a href="{% url 'task_create' %}" class="btn btn-primary" style="margin-top:10px;">Создать новую задачу</a>
-
+            {% if not is_public %}
+              <a href="{% url 'task_create' %}" class="btn btn-primary" style="margin-top:10px;">Создать новую задачу</a>
+            {% endif %}
             <style>
               .tasks-list, .responses-list { list-style: none; padding: 0; margin: 0; }
               .task-item { padding: 8px 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
@@ -202,6 +334,14 @@
         });
         //Чтобы сразу исполнителя видеть
         document.getElementById("tab-executor").style.display = "block";
+      function toggleTable(id, titleEl) {
+        const table = document.getElementById(id);
+        const arrow = titleEl.querySelector(".arrow");
+        const isVisible = table.style.display === "block";
+        table.style.display = isVisible ? "none" : "block";
+        arrow.style.transform = isVisible ? "rotate(0deg)" : "rotate(180deg)";
+      }
+
       </script>
 
     </div>

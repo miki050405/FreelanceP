@@ -14,5 +14,12 @@ urlpatterns = [
     path("tasks/<int:pk>/edit/", views.task_edit, name="task_edit"),
     path("tasks/<int:pk>/delete/", views.task_delete, name="task_delete"),
     path("tasks/", views.tasks_list, name="tasks_list"),
-
+    path("tasks/<int:task_id>/respond/", views.respond_to_task, name="respond_to_task"),
+    path(
+        "response/<int:pk>/status/",
+        views.response_set_status,
+        name="response_set_status",
+    ),
+    path("profile/<int:user_id>/", views.profile_public_view, name="profile_public"),
+    path("response/<int:pk>/cancel/", views.response_cancel, name="response_cancel"),
 ]
