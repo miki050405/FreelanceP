@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block content %}
+<h2>Ваши уведомления</h2>
+<ul class="notifications-list">
+  {% for n in notifications %}
+    <li class="{% if not n.is_read %}unread{% endif %}">
+      <strong>[{{ n.type }}]</strong> {{ n.content }}
+      <small>{{ n.created_at|date:"d.m.Y H:i" }}</small>
+    </li>
+  {% empty %}
+    <p>Пока уведомлений нет.</p>
+  {% endfor %}
+</ul>
+
+<style>
+.notifications-list {
+  list-style: none;
+  padding: 0;
+}
+.notifications-list li {
+  background: #f7f9fc;
+  margin-bottom: 8px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+.notifications-list li.unread {
+  background: #e6f0ff;
+  font-weight: 600;
+}
+.notifications-list li:hover {
+  background: #d9eaff;
+}
+</style>
+{% endblock %}

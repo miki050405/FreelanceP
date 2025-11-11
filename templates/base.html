@@ -31,6 +31,12 @@
         <a class="avatar-btn" href="{% url 'profile' %}" title="Личный кабинет">
           <img src="{% static 'freelance_app/img/icon-user.png' %}" alt="Профиль">
         </a>
+         <a href="{% url 'notifications' %}" class="btn btn-link" title="Уведомления">
+          <img src="{% static 'freelance_app/img/bell-icon.png' %}" alt="Уведомления">
+          {% if unread_count > 0 %}
+              <span class="notif-count">{{ unread_count }}</span>
+          {% endif %}
+          </a>
         <a class="btn btn-link" href="{% url 'logout' %}">Выйти</a>
         {% else %}
           <a class="btn btn-outline" href="{% url 'login' %}">Войти</a>
