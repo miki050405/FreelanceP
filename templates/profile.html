@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'freelance_app/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-profile">
+  <div class="profile-wrap">
+
+    <!-- Header блока профиля (НЕ сайт-хедер) -->
+    <header class="profile-header">
+      {% if profile.avatar %}
+        <img class="profile-avatar" src="{{ profile.avatar.url }}" alt="">
+      {% else %}
+        <img class="profile-avatar" src="{% static 'freelance_app/img/avatar-placeholder.svg' %}" alt="">
+      {% endif %}
+
+      <div class="profile-title">
+        <h1>{{ profile.user.get_full_name|default:profile.user.username }}</h1>
+        {% if stats.reviews_cnt %}
+          <div class="chips">
+            <span class="chip">Оценка: {{ stats.reviews_avg|floatformat:1 }} ({{ stats.reviews_cnt }})</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="profile-actions">
+        {% if not is_public %}
+        <div class="settings-menu">
+          <button class="icon-btn" aria-label="Настройки">
+            <img src="{% static 'freelance_app/img/settings.png' %}" alt="Настройки">
+          </button>
+          <div class="dropdown">
+            <a href="#" >Уведомления</a>
+            <a href="#" >История платежей</a>
+            <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="profile-body">
+      <!-- ЛЕВАЯ КОЛОНКА: контакты, город, навыки, отзывы -->
+      <aside class="card">
+        <div class="kv">
+          {% if profile.phone %}
+            <div class="row"><div class="key">Телефон</div><div class="val">{{ profile.phone }}</div></div>
+          {% endif %}
+
+          {% if user_obj.email %}
+            <div class="row"><div class="key">Email</div><div class="val"><a href="mailto:{{ user_obj.email }}">{{ user_obj.email }}</a></div></div>
+          {% endif %}
+
+          {% if profile.location %}
+            <div class="row"><div class="key">Город</div><div class="val">{{ profile.location }}</div></div>
+          {% endif %}
+          {% if profile.qr_code %}
+            <div class="row">
+              <div class="key">Qr код</div>
+              <div class="val">
+                <a href="{{ profile.qr_code.url }}" target="_blank">
+                  <img src="{{ profile.qr_code.url }}" alt="QR-код" class="qr-thumb">
+                </a>
+              </div>
+            </div>
+          {% else %}
+            <div class="row">
+              <div class="key">Платёжная информация</div>
+              <div class="val muted">Пока не добавлено</div>
+            </div>
+          {% endif %}
+          <div class="row">
+            <div class="key">Навыки</div>
+            <div class="val pills">
+              {% if profile.skills %}
+                <span class="pill">{{ profile.skills }}</span>
+              {% else %}
+                <span class="pill">Пока не указаны</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <h3 style="font-size:16px; margin:8px 0 6px">Отзывы</h3>
+          <ul class="reviews">
+            {% for r in reviews_page %}
+              <li>
+                <strong>{{ r.author.get_full_name|default:r.author.username }}</strong>:
+                {{ r.rating }}/5 — {{ r.comment|default:"Без комментария" }}
+              </li>
+            {% empty %}
+              <li>Отзывов пока нет</li>
+            {% endfor %}
+          </ul>
+
+          {% if reviews_page.paginator.num_pages > 1 %}
+            <div style="margin-top:8px; display:flex; gap:8px">
+              {% if reviews_page.has_previous %}
+                <a class="pill" href="?rvpage={{ reviews_page.previous_page_number }}">← Назад</a>
+              {% endif %}
+              <span class="pill">Стр. {{ reviews_page.number }} / {{ reviews_page.paginator.num_pages }}</span>
+              {% if reviews_page.has_next %}
+                <a class="pill" href="?rvpage={{ reviews_page.next_page_number }}">Вперёд →</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </aside>
+
+      <!-- ПРАВАЯ КОЛОНКА: О себе + счётчики -->
+      <main class="section">
+        <h2>О себе</h2>
+        {% if profile.bio %}
+          <p style="white-space:pre-wrap">{{ profile.bio }}</p>
+        {% else %}
+          <p class="muted">Пока без описания.</p>
+        {% endif %}
+
+        <div class="pills" style="margin-top:12px">
+          <span class="pill">Заявки: {{ stats.my_applications }}</span>
+          <span class="pill">Отклики на мои задачи: {{ stats.task_responses }}</span>
+          <span class="pill">Непрочитанных: {{ stats.unread }}</span>
+        </div>
+
+        <!-- позже блоки Исполнитель / Заказчик -->
+        <section class="section" style="margin-top: 24px">
+          <div class="tabs-header">
+            <button class="tab active" data-tab="executor">Исполнитель</button>
+            <button class="tab" data-tab="customer">Заказчик</button>
+          </div>
+          <div class="tabs-line"></div>
+
+          <div id="tab-executor" class="tabpane" style="display:none">
+            {% if not is_public %}
+            <h3 class="section-title" onclick="toggleTable('applications-table', this)">
+              <span>Заявки</span>
+              <span class="arrow">▼</span>
+            </h3>
+            
+            <div id="applications-table" class="table-wrap" style="display:none;">
+
+              {% if my_responses_pending %}
+                  <table class="table-applications">
+                    <thead>
+                      <tr>
+                        <th>Название</th>
+                        <th>Категория</th>
+                        <th>Заказчик</th>
+                        <th>Дата отклика</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for r in my_responses_pending %}
+                      <tr>
+                        <td>{{ r.task.title }}</td>
+                        <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                        <td>{{ r.task.customer.username }}</td>
+                        <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="status {{ r.status|lower }}">{{ r.status }}</td>
+                        <td>
+                          <form method="post" action="{% url 'response_cancel' r.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-small btn-danger"
+                              onclick="return confirm('Отменить отклик?');">Отменить</button>
+                          </form>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+              {% else %}
+                <p class="muted">Здесь пока пусто.</p>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <h3 class="section-title" onclick="toggleTable('assignments-table', this)">
+            <span>Текущие задачи</span>
+            <span class="arrow">▼</span>
+          </h3>
+
+          <div id="assignments-table" class="table-wrap" style="display:none;">
+            {% if my_assignments %}
+              <table class="table-applications">
+                <colgroup>
+                  <col style="width:40%">
+                  <col style="width:25%">
+                  <col style="width:20%">
+                  <col style="width:15%">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Название</th>
+                    <th>Категория</th>
+                    <th>Заказчик</th>
+                    <th>Дедлайн</th>
+                    <th>Статус задачи</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in my_assignments %}
+                  <tr>
+                    <td>{{ r.task.title }}</td>
+                    <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                    <td>{{ r.task.customer.username }}</td>
+                    <td>{% if r.task.deadline %}{{ r.task.deadline|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+                    <td class="tstatus {{ r.task.status|slugify }}">{{ r.task.status }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p class="muted">Пока нет принятых задач.</p>
+            {% endif %}
+          </div>
+          </div>
+
+          <div id="tab-customer" class="tabpane" style="display:none">
+            <!-- Отклики -->
+                <h3 class="section-title" onclick="toggleTable('customer-responses', this)">
+                  <span>Отклики</span>
+                  <span class="arrow">▼</span>
+                </h3>
+
+                <div id="customer-responses" class="table-wrap" style="display:none;">
+                  {% if responses_to_my_tasks %}
+                    <table class="table-applications">
+                      <colgroup>
+                        <col style="width:30%">
+                        <col style="width:20%">
+                        <col style="width:20%">
+                        <col style="width:15%">
+                        <col style="width:15%">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Название</th>
+                          <th>Категория</th>
+                          <th>Исполнитель</th>
+                          <th>Дата отклика</th>
+                          <th>Статус</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for r in responses_to_my_tasks %}
+                          <tr>
+                            <td>{{ r.task.title }}</td>
+                            <td>{% if r.task.category %}{{ r.task.category.name }}{% else %}—{% endif %}</td>
+                            <td>
+                              <a href="{% url 'profile_public' r.executor.id %}" class="profile-link">
+                                {{ r.executor.get_full_name|default:r.executor.username }}
+                              </a>
+                            </td>
+                            <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                              {% if not is_public %}
+                                <form method="post" action="{% url 'response_set_status' r.id %}">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="next" value="{% url 'profile' %}?tab=customer">
+                                  <select name="status" class="status-select" onchange="this.form.submit()">
+                                    {% for val,label in response_status_choices %}
+                                      <option value="{{ val }}" {% if r.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                  </select>
+                                </form>
+                              {% else %}
+                                <span class="status {{ r.status|lower }}">{{ r.status }}</span>
+                              {% endif %}
+                            </td>
+
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  {% else %}
+                    <p class="muted">Откликов на ваши задачи пока нет.</p>
+                  {% endif %}
+                </div>
+
+            <!-- Мои задачи -->
+            <h3 style="margin-top:16px;">Мои задачи</h3>
+            {% if my_tasks %}
+              <ul class="tasks-list">
+                {% for task in my_tasks %}
+                  <li class="task-item">
+                    <strong>{{ task.title }}</strong> — {{ task.status }} — {{ task.price }} с
+                    <div class="task-actions">
+                      {% if not is_public %}
+                      <a href="{% url 'task_edit' task.pk %}" class="btn-small">Редактировать</a>
+                      <a href="{% url 'task_delete' task.pk %}" class="btn-small btn-danger">Удалить</a>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">Нет задач</p>
+            {% endif %}
+            {% if not is_public %}
+              <a href="{% url 'task_create' %}" class="btn btn-primary" style="margin-top:10px;">Создать новую задачу</a>
+            {% endif %}
+            <style>
+              .tasks-list, .responses-list { list-style: none; padding: 0; margin: 0; }
+              .task-item { padding: 8px 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+              .task-actions a { margin-left: 6px; text-decoration: none; padding: 4px 8px; border-radius: 5px; font-size: 13px; }
+              .btn-small { background: #2196f3; color: white; }
+              .btn-small.btn-danger { background: #e53935; }
+              .btn-primary { background: #4caf50; color: white; padding: 8px 14px; text-decoration: none; border-radius: 6px; display: inline-block; }
+              .muted { color: #888; }
+            </style>
+          </div>
+
+
+      </main>
+      <script>
+        document.querySelectorAll(".tab").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            btn.classList.add("active");
+
+            // скрываем все панели
+            document.querySelectorAll(".tabpane").forEach(p => p.style.display = "none");
+
+            // показываем нужную
+            const id = "tab-" + btn.dataset.tab;
+            document.getElementById(id).style.display = "block";
+          });
+        });
+        //Чтобы сразу исполнителя видеть
+        document.getElementById("tab-executor").style.display = "block";
+      function toggleTable(id, titleEl) {
+        const table = document.getElementById(id);
+        const arrow = titleEl.querySelector(".arrow");
+        const isVisible = table.style.display === "block";
+        table.style.display = isVisible ? "none" : "block";
+        arrow.style.transform = isVisible ? "rotate(0deg)" : "rotate(180deg)";
+      }
+
+      </script>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{# Скрываем футер именно на странице профиля #}
+{% block footer %}{% endblock %}

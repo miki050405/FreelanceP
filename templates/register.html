@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Регистрация</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #0b1e3c, #1b4370);
+    }
+
+    .register-card {
+      background: #f9f9ff;
+      border-radius: 18px;
+      padding: 40px 36px;
+      width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: #1b4370;
+      font-weight: 600;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+
+    .errorlist {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+      color: #b91c1c;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .form-row {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    label {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      transition: all 0.25s;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      outline: none;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1b4370, #7c3aed);
+      color: #fff;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(124, 58, 237, 0.3);
+    }
+
+    .bottom-text {
+      margin-top: 18px;
+      font-size: 14px;
+      color: #1b4370;
+    }
+
+    .bottom-text a {
+      color: #7c3aed;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .bottom-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-card">
+    <h2>Создать аккаунт</h2>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="form-row">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <ul class="errorlist">
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="btn">Создать аккаунт</button>
+    </form>
+
+    <div class="bottom-text">
+      Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+    </div>
+  </div>
+</body>
+</html>

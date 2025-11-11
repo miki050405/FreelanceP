@@ -91,6 +91,12 @@ class Response(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("task", "executor")
+
+    def __str__(self):
+        return f"{self.executor.username} → {self.task.title} ({self.status})"
+
 
 # --------------------------
 # Портфолио

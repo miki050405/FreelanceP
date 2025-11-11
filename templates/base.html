@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ФриЛанПла{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'freelance_app/css/style.css' %}">
+  <link rel="icon" href="{% static 'freelance_app/img/logo.png' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="layout">
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{% url 'home' %}">
+        <img src="{% static 'freelance_app/img/logo.png' %}" alt="Логотип" class="brand-logo">
+        <span class="brand-name">ФриЛанПла</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="{% url 'home' %}">Главная</a>
+        <a href="{% url 'tasks_list' %}">Задачи</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="search">
+          <input type="text" placeholder="Поиск…">
+        </div>
+        {% if user.is_authenticated %}
+        <a class="avatar-btn" href="{% url 'profile' %}" title="Личный кабинет">
+          <img src="{% static 'freelance_app/img/icon-user.png' %}" alt="Профиль">
+        </a>
+        <a class="btn btn-link" href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+          <a class="btn btn-outline" href="{% url 'login' %}">Войти</a>
+          <a class="btn btn-primary" href="{% url 'register' %}">Регистрация</a>
+       {% endif %}
+      </div>
+
+    </div>
+  </header>
+  
+{% block flash %}
+  {% if messages %}
+    {# Скрываем обычный список сообщений (чтобы не дублировался) #}
+    <div class="site-messages" style="display:none;">
+      <ul>
+        {% for message in messages %}
+          <li class="msg {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const items = document.querySelectorAll('.site-messages .msg');
+      if (!items.length) return;
+
+      items.forEach((msg, i) => {
+        const type = (msg.className.split(' ').find(c =>
+          ['success','error','info','warning'].includes(c)
+        )) || 'info';
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = msg.textContent;
+        // вертикальное смещение, если несколько сообщений
+        toast.style.top = `${40 + i * 70}px`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      });
+    });
+  </script>
+
+  <style>
+    .toast {
+      position: fixed;
+      top: 40px; /* чуть ниже шапки */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 14px 22px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      opacity: 0;
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 9999;
+      min-width: 280px;
+      max-width: 480px;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .toast.success { background: #4caf50; }
+    .toast.error   { background: #f44336; }
+    .toast.warning { background: #ffb300; color: #222; }
+    .toast.info    { background: #2196f3; }
+  </style>
+{% endblock %}
+
+
+
+  <!-- Main -->
+  <main class="site-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  {% block footer %}
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <div class="brand brand--footer">
+          <img src="{% static 'freelance_app/img/logo.png' %}" alt="Лого" class="brand-logo">
+          <span class="brand-name"><a href="{% url 'home' %}">ФриЛанПла</a></span>
+        </div>
+        <div class="socials">
+          <a href="#" aria-label="Facebook"><img src="{% static 'freelance_app/img/social-fb.png' %}" alt=""></a>
+          <a href="#" aria-label="Instagram"><img src="{% static 'freelance_app/img/social-ig.png' %}" alt=""></a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Навигация</h4>
+        <ul>
+          <li><a href="{% url 'home' %}">На главную</a></li>
+          <li><a href="{% url 'profile' %}">Личный кабинет</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Связаться с нами</h4>
+        <p>+996 (0)775 578-648</p>
+        <p>jevthi@gmail.com</p>
+      </div>
+    </div>
+  </footer>
+  {% endblock %}
+</body>
+</html>
+
+

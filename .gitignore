@@ -9,7 +9,9 @@ __pycache__/
 db.sqlite3
 /staticfiles/
 media/
-
+# Static and media 
+static/img/
+static/css/*.map
 # Virtual environment
 venv/
 .env/
@@ -23,4 +25,4 @@ venv/
 .DS_Store
 Thumbs.db
 
-freelance_platform/settings.py
+
