@@ -297,3 +297,145 @@
   height:10px;         
   pointer-events:none; 
 }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  background: #f8f9fc;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.section-title:hover {
+  background: #eef2ff;
+}
+
+.section-title .arrow {
+  font-size: 14px;
+  color: #444;
+  transition: transform 0.3s ease;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  transition: all 0.3s ease;
+}
+
+.table-applications {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-applications th,
+.table-applications td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table-applications th {
+  background: #f2f4f8;
+  color: #333;
+  font-weight: 600;
+}
+
+.table-applications tr:hover {
+  background: #f4f6ff;
+}
+
+.status.рассматривается { color: #2196f3; }
+.status.принята { color: #4caf50; }
+.status.отклонена { color: #e53935; }
+
+.tstatus.open       { color:#2196f3; }
+.tstatus.v-rabote   { color:#ff9800; }
+.tstatus.zavershena { color:#4caf50; }
+
+/* === Блок откликов заказчика === */
+
+#customer-responses {
+  margin-top: 10px;
+}
+
+.table-applications {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table-applications th,
+.table-applications td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.table-applications th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.table-applications tr:hover {
+  background-color: #f8f8ff;
+}
+
+.status-select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #7b5cd6;
+  box-shadow: 0 0 3px rgba(123, 92, 214, 0.4);
+}
+
+.status-select option[value="Рассматривается"] {
+  color: #555;
+}
+.status-select option[value="Принята"] {
+  color: #2e7d32;
+  font-weight: 600;
+}
+.status-select option[value="Отклонена"] {
+  color: #c62828;
+  font-weight: 600;
+}
+.profile-link {
+  color: #5a3ec8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.profile-link:hover {
+  color: #7c5df4;
+  text-decoration: underline;
+}
+.btn-small.btn-danger {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-small.btn-danger:hover {
+  background: #c62828;
+}

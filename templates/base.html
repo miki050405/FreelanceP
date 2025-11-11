@@ -20,7 +20,7 @@
 
       <nav class="main-nav">
         <a href="{% url 'home' %}">Главная</a>
-        <a href="#">Задачи</a>
+        <a href="{% url 'tasks_list' %}">Задачи</a>
       </nav>
 
       <div class="header-actions">
@@ -40,9 +40,11 @@
 
     </div>
   </header>
+  
 {% block flash %}
   {% if messages %}
-    <div class="site-messages">
+    {# Скрываем обычный список сообщений (чтобы не дублировался) #}
+    <div class="site-messages" style="display:none;">
       <ul>
         {% for message in messages %}
           <li class="msg {{ message.tags }}">{{ message }}</li>
@@ -50,7 +52,65 @@
       </ul>
     </div>
   {% endif %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const items = document.querySelectorAll('.site-messages .msg');
+      if (!items.length) return;
+
+      items.forEach((msg, i) => {
+        const type = (msg.className.split(' ').find(c =>
+          ['success','error','info','warning'].includes(c)
+        )) || 'info';
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = msg.textContent;
+        // вертикальное смещение, если несколько сообщений
+        toast.style.top = `${40 + i * 70}px`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      });
+    });
+  </script>
+
+  <style>
+    .toast {
+      position: fixed;
+      top: 40px; /* чуть ниже шапки */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 14px 22px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      opacity: 0;
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 9999;
+      min-width: 280px;
+      max-width: 480px;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .toast.success { background: #4caf50; }
+    .toast.error   { background: #f44336; }
+    .toast.warning { background: #ffb300; color: #222; }
+    .toast.info    { background: #2196f3; }
+  </style>
 {% endblock %}
+
+
+
   <!-- Main -->
   <main class="site-main">
     {% block content %}{% endblock %}
