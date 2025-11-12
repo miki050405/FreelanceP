@@ -178,17 +178,40 @@ def response_set_status(request, pk):
             task.status = "В работе"
             task.save(update_fields=["executor", "status"])
 
-            # 3) остальные отклики на эту задачу отклоняем (чтобы не было двух принятых)
-            Response.objects.filter(task=task).exclude(pk=resp.pk).update(
-                status="Отклонена"
+            # 3) остальные отклики на эту задачу отклоняем
+            other_responses = Response.objects.filter(task=task).exclude(pk=resp.pk)
+            other_responses.update(status="Отклонена")
+
+            #Уведомляем исполнителя, чей отклик принят
+            Notification.objects.create(
+                user=resp.executor,
+                type="Статус заявки",
+                content=f"Ваш отклик на задачу '{task.title}' принят!"
             )
+
+            #Уведомляем остальных, что их отклонено
+            for r in other_responses:
+                Notification.objects.create(
+                    user=r.executor,
+                    type="Статус заявки",
+                    content=f"Ваш отклик на задачу '{task.title}' отклонён."
+                )
 
             messages.success(request, "Отклик принят. Задача переведена в «В работе».")
         else:
             # Любой другой статус (Рассматривается / Отклонена)
             resp.status = new_status
             resp.save(update_fields=["status"])
+
+            # уведомление об изменении статуса
+            Notification.objects.create(
+                user=resp.executor,
+                type="Статус заявки",
+                content=f"Статус вашего отклика на задачу '{resp.task.title}' изменён на '{new_status}'"
+            )
+
             messages.success(request, "Статус отклика обновлён.")
+
     return redirect(request.POST.get("next") or "profile")
 
 
