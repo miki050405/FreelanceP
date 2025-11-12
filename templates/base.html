@@ -32,7 +32,7 @@
           <img src="{% static 'freelance_app/img/icon-user.png' %}" alt="Профиль">
         </a>
          <a href="{% url 'notifications' %}" class="btn btn-link" title="Уведомления">
-          <img src="{% static 'freelance_app/img/bell-icon.png' %}" alt="Уведомления">
+          <img src="{% static 'freelance_app/img/bell-icon.png' %}" alt="Уведомления" style="width:24px; height:24px; object-fit:contain;">
           {% if unread_count > 0 %}
               <span class="notif-count">{{ unread_count }}</span>
           {% endif %}
