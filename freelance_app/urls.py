@@ -22,4 +22,10 @@ urlpatterns = [
     path("profile/<int:user_id>/", views.profile_public_view, name="profile_public"),
     path("response/<int:pk>/cancel/", views.response_cancel, name="response_cancel"),
     path("notifications/", views.notifications_list, name="notifications"),
+    path(
+        "notifications/settings/",
+        views.notification_settings,
+        name="notification_settings"
+    ),
+
 ]
