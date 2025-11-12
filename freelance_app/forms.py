@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import UserProfile
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import Task
+from .models import Task,Category
 
 
 class UserForm(forms.ModelForm):
@@ -52,3 +52,20 @@ class TaskForm(forms.ModelForm):
             "deadline": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 4}),
         }
+        
+
+class NotificationSettingsForm(forms.ModelForm):
+    categories = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Выберите категории для уведомлений"
+    )
+    wants_task_notifications = forms.BooleanField(
+        required=False,
+        label="Включить уведомления о новых задачах"
+    )
+
+    class Meta:
+        model = UserProfile
+        fields = ["wants_task_notifications"]

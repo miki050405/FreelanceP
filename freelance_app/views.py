@@ -10,7 +10,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm
 from .models import Task, Response
-from .forms import TaskForm
+from .forms import TaskForm,NotificationSettingsForm
 from django.urls import reverse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
@@ -381,6 +381,7 @@ def create_task(request):
         category_id = request.POST.get("category")
         category = Category.objects.get(id=category_id)
 
+        # создаём задачу
         task = Task.objects.create(
             title=title,
             description=description,
@@ -388,15 +389,28 @@ def create_task(request):
             category=category,
             customer=request.user
         )
-        
+
+        # уведомляем исполнителей
+        # находим пользователей, у которых выбрана категория
         subscribers = UserCategory.objects.filter(category=category)
-        for sub in subscribers:
-            if sub.profile.wants_task_notifications:
-                Notification.objects.create(
-                    user=sub.profile.user,
-                    type="Новая задача",
-                    content=f"Новая задача в категории '{category.name}': {task.title}",
-                )
+
+        # пользователи, у которых нет категорий — получат всё подряд
+        no_category_profiles = UserProfile.objects.filter(
+            categories__isnull=True,
+            wants_task_notifications=True
+        )
+
+        # объединяем две группы: с категорией и без
+        notified_profiles = set(
+            [uc.profile for uc in subscribers if uc.profile.wants_task_notifications]
+        ) | set(no_category_profiles)
+
+        for profile in notified_profiles:
+            Notification.objects.create(
+                user=profile.user,
+                type="Новая задача",
+                content=f"Новая задача в категории '{category.name}': {task.title}",
+            )
 
         messages.success(request, "Задача успешно создана!")
         return redirect("tasks_list")
@@ -449,6 +463,34 @@ def notifications_view(request):
     return render(request, "notifications.html", {"notifications": notifications})
 
 @login_required
-def notifications(request):
-    notifications = request.user.notifications.order_by('-created_at')
-    return render(request, 'notifications.html', {'notifications': notifications})
+def notifications_list(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, "notifications.html", {"notifications": notifications})
+
+
+@login_required
+def notification_settings(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = NotificationSettingsForm(request.POST, instance=profile)
+        if form.is_valid():
+            profile = form.save()
+
+            # сохраняем категории
+            selected_categories = form.cleaned_data["categories"]
+            
+            # удаляем старые связи
+            UserCategory.objects.filter(profile=profile).exclude(category__in=selected_categories).delete()
+
+            # создаём новые связи
+            for cat in selected_categories:
+                UserCategory.objects.get_or_create(profile=profile, category=cat)
+
+            return redirect("profile")  # или сообщение об успехе
+    else:
+        # начальные выбранные категории
+        initial_cats = Category.objects.filter(usercategory__profile=profile)
+        form = NotificationSettingsForm(instance=profile, initial={"categories": initial_cats})
+
+    return render(request, "notification_settings.html", {"form": form})
