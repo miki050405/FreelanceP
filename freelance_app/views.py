@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.db.models import Count
-from .models import UserProfile, Task, Response, Review
+from .models import Category, UserProfile, Task, Response, Review
 from django.db.models import Avg, Count
 from django.core.paginator import Paginator
 from .forms import UserForm, UserProfileForm
@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.db import transaction
-
+from .models import Notification, UserCategory, UserProfile
 
 def home_view(request):
     return render(request, "home.html")
@@ -347,3 +347,85 @@ def respond_to_task(request, task_id):
         messages.info(request, "Вы уже откликались на эту задачу.")
 
     return redirect("tasks_list")
+
+
+@login_required
+def create_task(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        price = request.POST.get("price")
+        category_id = request.POST.get("category")
+        category = Category.objects.get(id=category_id)
+
+        task = Task.objects.create(
+            title=title,
+            description=description,
+            price=price,
+            category=category,
+            customer=request.user
+        )
+        
+        subscribers = UserCategory.objects.filter(category=category)
+        for sub in subscribers:
+            if sub.profile.wants_task_notifications:
+                Notification.objects.create(
+                    user=sub.profile.user,
+                    type="Новая задача",
+                    content=f"Новая задача в категории '{category.name}': {task.title}",
+                )
+
+        messages.success(request, "Задача успешно создана!")
+        return redirect("tasks_list")
+
+    categories = Category.objects.all()
+    return render(request, "create_task.html", {"categories": categories})
+
+@login_required
+def send_response(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    if request.method == "POST":
+        response = Response.objects.create(
+            task=task,
+            executor=request.user
+        )
+        Notification.objects.create(
+            user=task.customer,
+            type="Отклик",
+            content=f"{request.user.username} откликнулся на вашу задачу '{task.title}'"
+        )
+
+        messages.success(request, "Отклик успешно отправлен!")
+        return redirect("task_detail", task_id=task.id)
+
+    return redirect("tasks_list")
+
+@login_required
+def update_response_status(request, response_id):
+    response = get_object_or_404(Response, id=response_id)
+    
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        response.status = new_status
+        response.save()
+
+        # 🔔 уведомляем исполнителя
+        Notification.objects.create(
+            user=response.executor,
+            type="Статус заявки",
+            content=f"Статус вашего отклика на задачу '{response.task.title}' изменён на '{new_status}'"
+        )
+
+        messages.success(request, "Статус отклика обновлён.")
+        return redirect("task_detail", task_id=response.task.id)
+
+@login_required
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, "notifications.html", {"notifications": notifications})
+
+@login_required
+def notifications(request):
+    notifications = request.user.notifications.order_by('-created_at')
+    return render(request, 'notifications.html', {'notifications': notifications})

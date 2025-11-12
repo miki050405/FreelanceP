@@ -1,0 +1,10 @@
+DATABASE_URL=postgresql://neondb_owner:npg_wkNEGJ1vRxQ2@ep-hidden-butterfly-a1t2lyq3-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DJANGO_SECRET_KEY = 2tzy+q1!*7!@6lyuxroap6ii67ynt!blp0+u3#87bb6wjn^kg
+DJANGO_DEBUG=True
+
+CLOUDINARY_CLOUD_NAME=doiy7f2el
+CLOUDINARY_API_KEY=474634282497977
+CLOUDINARY_API_SECRET=5J-o8WK8M8lHQgHApDjYLAL649I
+
+ALLOWED_HOSTS=freelancep.onrender.com,localhost,127.0.0.1
+
